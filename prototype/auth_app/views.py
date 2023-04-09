@@ -2,6 +2,7 @@ from django.shortcuts import render, redirect
 from django.contrib import messages
 from django.contrib.auth import authenticate, login as auth_login
 from .models import CustomUser
+import json
 
 # Create your views here.
 
@@ -25,9 +26,9 @@ def facial_auth(request):
 def signup(request):
     if request.method == 'POST':
         email = request.POST['email']
-        username = request.POST['username']
-        password1 = request.POST['password1']
-        password2 = request.POST['password2']
+        username = request.POST.get('username')
+        password1 = request.POST.get('password1')
+        password2 = request.POST.get('password2') # request.POST => request.POST.get()
         facial_data = request.POST.get('facial_data', None)  # Add this line
         
         # Check if passwords match
@@ -54,8 +55,8 @@ def signup(request):
 
 def login(request):
     if request.method == 'POST':
-        email = request.POST['email']
-        password = request.POST['password']
+        email = request.POST.get('email')
+        password = request.POST.get('password')
         facial_data = request.POST.get('facial_data', None)
 
         try:
