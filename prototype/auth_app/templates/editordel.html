@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>{{data.action}}</title>
+</head>
+<body>
+    {% if error %}
+        <p>{{ error }}</p>
+    {% endif %}
+    <h1>{{data.action}}</h1>
+    <form method="POST" action="">
+        {% csrf_token %}
+        <!-- Your form fields here -->
+        <label for="info1">First confirmation:</label>
+        <input type="{% if data.type == 'username' %}text{% elif data.type == 'password' %}password{% elif data.type == 'email' %}email{% endif %}" id="info1" name="info1" required><br>
+        <label for="info2">Second confirmation:</label>
+        <input type="{% if data.type == 'username' %}text{% elif data.type == 'password' %}password{% elif data.type == 'email' %}email{% endif %}" id="info2" name="info2" required><br>
+        <button type="submit" name="update">Update</button>
+    </form>
+</body>
+</html>

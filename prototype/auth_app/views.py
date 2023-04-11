@@ -3,7 +3,7 @@ from django.contrib import messages
 from django.contrib.auth import authenticate, login as auth_login
 from .models import CustomUser
 import json
-
+import pymongo
 # Create your views here.
 
 from django.http import JsonResponse
@@ -25,15 +25,12 @@ def facial_auth(request):
 
 def signup(request):
     if request.method == 'POST':
+        client = pymongo.MongoClient('mongodb+srv://admin:admin@security.ju0aixd.mongodb.net/?retryWrites=true&w=majority')
+        db = client.admin
         email = request.POST['email']
         username = request.POST.get('username')
-        password1 = request.POST.get('password1')
-        password2 = request.POST.get('password2') # request.POST => request.POST.get()
+        password = request.POST.get('password')
         facial_data = request.POST.get('facial_data', None)  # Add this line
-        
-        # Check if passwords match
-        if password1 != password2:
-            return render(request, 'signup.html', {'error': 'Passwords do not match'})
         
         # Check if user with the same email already exists
         if CustomUser.objects.filter(email=email).exists():
@@ -42,11 +39,20 @@ def signup(request):
         # Check if user with the same username already exists
         if CustomUser.objects.filter(username=username).exists():
             return render(request, 'signup.html', {'error': 'Username is already taken'})
-        
         # Create new user
-        user = CustomUser.objects.create_user(username=username, email=email, password=password1, facial_data=facial_data)
-        user.save()
+        #user = CustomUser.objects.create_user(username=username, email=email, password=password, facial_data=facial_data)
+        #user.save()
+        db = client.customers
+        customers = db.customers
         
+
+        if customers.count_documents({'email': email}) != 0:
+            return render(request, 'signup.html', {'error': 'Email is already taken'})
+        if customers.count_documents({'username': username}) != 0:
+            return render(request, 'signup.html', {'error': 'Username is already taken'})
+        customer = {'email': email, 'username': username, 'password': password}
+
+        db.customers.insert_one(customer)
         # Redirect to login page
         return redirect('login')
     
@@ -55,36 +61,29 @@ def signup(request):
 
 def login(request):
     if request.method == 'POST':
+        client = pymongo.MongoClient('mongodb+srv://admin:admin@security.ju0aixd.mongodb.net/?retryWrites=true&w=majority')
+        db = client.admin
+        db = client.customers
+        customers = db.customers
         email = request.POST.get('email')
         password = request.POST.get('password')
         facial_data = request.POST.get('facial_data', None)
         print(request.POST)
-        try:
-            user = CustomUser.objects.get(email=email)
-            if user.check_password(password):
-                '''
-                if facial_data:
-                    # Perform facial authentication
-                    # If the facial authentication fails, show an error message and redirect to the login page.
-                    # Otherwise, proceed with the login.
-                    pass
-                auth_login(request, user)
-                messages.success(request, 'Logged in successfully.')
-                '''
-                print('checked')
-                return redirect('umain')
-            else:
-                messages.error(request, 'Invalid email or password.')
-                print('invalid')
-                return redirect('umain')
-        except CustomUser.DoesNotExist:
+        if customers.count_documents({'$and': [{'email': email}, {'password': password}]}):
+            messages.success(request, 'Login successfully.')
+            request.session['email'] = email
+            request.session['password'] = password
+            return redirect('umain')
+        else:
             messages.error(request, 'Invalid email or password.')
-            print('not exist')
+            print('invalid')
             return redirect('login')
     else:
         return render(request, 'login.html')
     
 def umain(request):
+    email = request.session.get('email')
+    password = request.session.get('password')
     if request.method == 'POST':
         print(request.POST)
         if 'settings' in request.POST.keys():
@@ -97,8 +96,65 @@ def umain(request):
         return render(request, 'umain.html')
     
 def settings(request):
-    return render(request, 'settings.html')
-    
+    email = request.session.get('email')
+    password = request.session.get('password')
+    client = pymongo.MongoClient('mongodb+srv://admin:admin@security.ju0aixd.mongodb.net/?retryWrites=true&w=majority')
+    db = client.admin
+    db = client.customers
+    customers = db.customers
+    data = list(customers.find({'$and': [{'email': email}, {'password': password}]}))
+    context = {'data': data[0]}
+    if request.method == 'POST':
+        print('receive request')
+        key_info = list(request.POST.keys())
+        print(key_info)
+        if key_info:
+            print(key_info[1])
+            if 'edit'in key_info[1]:
+                request.session['action'] = key_info[1][:4]
+                request.session['type'] = key_info[1][5:]
+                return redirect('editordel')
+            elif 'delete' in key_info[1]:
+                request.session['action'] = key_info[1][:6]
+                request.session['type'] = key_info[1][7:]
+                return redirect('editordel')
+        return redirect('settings')
+    else:
+        return render(request, 'settings.html', context)
+
+def editordel(request):
+    action = request.session['action']
+    action_type = request.session['type']
+    email = request.session.get('email')
+    password = request.session.get('password')
+    data = {'action': action, 'type': action_type}
+    context = {'data': data}
+
+    if request.method == 'POST':
+        if 'update' in request.POST.keys():
+            modified_info = request.POST.get('info1')
+            modified_info_conf = request.POST.get('info2')
+            if modified_info != modified_info_conf:
+                return render(request, 'editordel.html', {'error': 'Two inputs do not match.'})
+            client = pymongo.MongoClient('mongodb+srv://admin:admin@security.ju0aixd.mongodb.net/?retryWrites=true&w=majority')
+            db = client.admin
+            db = client.customers
+            customers = db.customers
+            # Find document to be modified
+            document = customers.find_one({'email': email, 'password': password})
+            
+            if document:
+                if action == 'edit':
+                    customers.update_one({'email': email, 'password': password}, {'$set': {action_type: modified_info}})
+                if action == 'delete':
+                    customers.delete_one({'email': email, 'password': password})
+            return redirect('login')
+        return redirect('settings')
+    else:
+        return render(request, 'editordel.html', context)
+
+
+
 
 from django.contrib.auth import logout
 from django.shortcuts import redirect
