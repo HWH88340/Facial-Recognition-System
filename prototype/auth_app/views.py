@@ -58,10 +58,11 @@ def login(request):
         email = request.POST.get('email')
         password = request.POST.get('password')
         facial_data = request.POST.get('facial_data', None)
-
+        print(request.POST)
         try:
             user = CustomUser.objects.get(email=email)
             if user.check_password(password):
+                '''
                 if facial_data:
                     # Perform facial authentication
                     # If the facial authentication fails, show an error message and redirect to the login page.
@@ -69,15 +70,35 @@ def login(request):
                     pass
                 auth_login(request, user)
                 messages.success(request, 'Logged in successfully.')
-                return redirect('facial_auth')
+                '''
+                print('checked')
+                return redirect('umain')
             else:
                 messages.error(request, 'Invalid email or password.')
-                return redirect('login')
+                print('invalid')
+                return redirect('umain')
         except CustomUser.DoesNotExist:
             messages.error(request, 'Invalid email or password.')
+            print('not exist')
             return redirect('login')
     else:
         return render(request, 'login.html')
+    
+def umain(request):
+    if request.method == 'POST':
+        print(request.POST)
+        if 'settings' in request.POST.keys():
+            print('go to settings')
+            return redirect('settings')
+        pass
+        
+        return redirect('umain')
+    else:
+        return render(request, 'umain.html')
+    
+def settings(request):
+    return render(request, 'settings.html')
+    
 
 from django.contrib.auth import logout
 from django.shortcuts import redirect
