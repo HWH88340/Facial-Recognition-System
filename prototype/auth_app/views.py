@@ -75,9 +75,7 @@ def login(request):
             request.session['password'] = password
             return redirect('umain')
         else:
-            messages.error(request, 'Invalid email or password.')
-            print('invalid')
-            return redirect('login')
+            return render(request, 'login.html', {'error': 'Invalid email or password.'})
     else:
         return render(request, 'login.html')
     
@@ -129,13 +127,11 @@ def editordel(request):
     password = request.session.get('password')
     data = {'action': action, 'type': action_type}
     context = {'data': data}
-
+    print(context)
     if request.method == 'POST':
         if 'update' in request.POST.keys():
             modified_info = request.POST.get('info1')
             modified_info_conf = request.POST.get('info2')
-            if modified_info != modified_info_conf:
-                return render(request, 'editordel.html', {'error': 'Two inputs do not match.'})
             client = pymongo.MongoClient('mongodb+srv://admin:admin@security.ju0aixd.mongodb.net/?retryWrites=true&w=majority')
             db = client.admin
             db = client.customers
@@ -145,8 +141,13 @@ def editordel(request):
             
             if document:
                 if action == 'edit':
+                    if modified_info != modified_info_conf:
+                        print('donot match')
+                        return render(request, 'editordel.html', {'error': 'Two inputs do not match.', 'data': data})
                     customers.update_one({'email': email, 'password': password}, {'$set': {action_type: modified_info}})
                 if action == 'delete':
+                    if modified_info != email or modified_info_conf != password:
+                        return render(request, 'editordel.html', {'error': 'Invalid email or password.', 'data': data})
                     customers.delete_one({'email': email, 'password': password})
             return redirect('login')
         return redirect('settings')
