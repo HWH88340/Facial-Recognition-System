@@ -113,6 +113,15 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
+# Email settings
+# settings.py
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = 'smtp.office365.com'
+EMAIL_PORT = 587
+EMAIL_HOST_USER = 'sec_group13@outlook.com'  # Replace with your Outlook email address
+EMAIL_HOST_PASSWORD = 'Group13!'  # Replace with your Outlook email password
+EMAIL_USE_TLS = True
+
 
 # Internationalization
 # https://docs.djangoproject.com/en/4.1/topics/i18n/

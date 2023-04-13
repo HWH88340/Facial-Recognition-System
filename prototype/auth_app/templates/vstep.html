@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Email Verification</title>
+</head>
+<body>
+    {%if not confirm%}
+        <h1>Email Verification</h1>
+        <p>Please enter your email address below to receive a verification code.</p>
+        <form method="POST">
+        {% csrf_token %}
+        <label for="email">Email:</label>
+        <input type="email" id="email" name="email" required>
+        <input type="submit" name="vcode" value="Get Verification Code">
+        </form>
+    {%else%}
+        <h2>Verification Code</h2>
+        <form method="POST">
+        {% csrf_token %}
+        <label for="verification_code">Verification Code:</label>
+        <input type="text" id="verification_code" name="verification_code" required>
+        <button type="submit" name="vconfirm" class="btn btn-primary">Confirm</button>
+        </form>
+    {%endif%}
+</body>
+</html>
