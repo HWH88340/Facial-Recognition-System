@@ -36,18 +36,8 @@ def signup(request):
         password = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
         vstep_status = 'default'
         vstep_info = 'default'
-        facial_data = request.POST.get('facial_data', None)  # Add this line
-        
-        # Check if user with the same email already exists
-        if CustomUser.objects.filter(email=email).exists():
-            return render(request, 'signup.html', {'error': 'Email is already taken'})
-        
-        # Check if user with the same username already exists
-        if CustomUser.objects.filter(username=username).exists():
-            return render(request, 'signup.html', {'error': 'Username is already taken'})
-        # Create new user
-        #user = CustomUser.objects.create_user(username=username, email=email, password=password, facial_data=facial_data)
-        #user.save()
+        facial_data = request.POST.get('facial_data', None)
+
         db = client.customers
         customers = db.customers
         
@@ -120,6 +110,7 @@ def settings(request):
             if 'edit'in key_info[1]:
                 request.session['action'] = key_info[1][:4]
                 request.session['type'] = key_info[1][5:]
+                request.session['vstep_status_change'] == 'False'
                 if data[0]['vstep_status'] == 'Enable':
                     return redirect('vstep')
                 else:
@@ -127,13 +118,12 @@ def settings(request):
             elif 'delete' in key_info[1]:
                 request.session['action'] = key_info[1][:6]
                 request.session['type'] = key_info[1][7:]
+                request.session['vstep_status_change'] == 'False'
                 if data[0]['vstep_status'] == 'Enable':
                     return redirect('vstep')
                 else:
                     return redirect('editordel')
             elif 'able' in key_info[1]:
-                print('ableee')
-                print(request.POST)
                 if data[0]['vstep_info'] == 'default':
                     return redirect('vstep_init')
                 request.session['vstep_status'] = data[0]['vstep_status']
@@ -153,7 +143,7 @@ def vstep_init(request):
     db = client.customers
     customers = db.customers
     data = list(customers.find({'$and': [{'email': email}, {'password': password}]}))
-    
+
     if request.method == 'POST':
         print('get_post')
         vstep_status = 'Enable'
@@ -161,6 +151,8 @@ def vstep_init(request):
         context = {'confirm': ''}
         print(request.session.keys())
         if ('vcode' in request.POST.keys()):
+            if 'vcode' not in request.session:
+                request.session['vcode'] = 'unused'
             if (request.session['vcode']!='used'):
                 print('get_vcode')
                 subject = 'Verification' # Replace with your email subject
@@ -168,7 +160,7 @@ def vstep_init(request):
                 request.session['code'] = code
                 message = 'Verification code: ' + code # Replace with your email body
                 from_email = 'sec_group13@outlook.com' # Replace with your Gmail email address
-                recipient_list = [email] # Replace with the recipient's email address
+                recipient_list = [vstep_info] # Replace with the recipient's email address
                 send_mail(subject, message, from_email, recipient_list)
                 request.session['vstep_init_info'] = vstep_info
                 request.session['vcode'] = 'used'
@@ -182,8 +174,10 @@ def vstep_init(request):
             request.session['vcode'] = 'unused'
             verification_code = request.POST.get('verification_code')
             if verification_code == request.session['code']:
-                print('update_verification')
                 customers.update_one({'email': email, 'password': password}, {'$set': {'vstep_status': vstep_status, 'vstep_info': request.session['vstep_init_info']}})
+                request.session['vstep_status'] = vstep_status
+                request.session['vstep_info'] = request.session['vstep_init_info']
+                request.session['vstep_status_change'] = 'False'
             return redirect('settings')
         print(context)
         return redirect('vstep_init')
@@ -204,6 +198,8 @@ def vstep(request):
         vemail = request.POST.get('email')
         if ('vcode' in request.POST.keys()):
             if (request.session['vcode']!='used'):
+                if vemail != data[0]['vstep_info']:
+                    return render(request, 'vstep.html', {'error': 'Input email is not the same as your secondary email.'})
                 subject = 'Verification' # Replace with your email subject
                 code = str(random.randint(100000, 999999))
                 request.session['code'] = code

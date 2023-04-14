@@ -5,6 +5,9 @@
 </head>
 <body>
     {%if not confirm%}
+        {%if error%}
+            <p>Error: {{ error }}</p>
+        {%endif%}
         <h1>Email Verification</h1>
         <p>Please enter your email address below to receive a verification code.</p>
         <form method="POST">
