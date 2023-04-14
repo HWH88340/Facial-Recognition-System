@@ -110,7 +110,7 @@ def settings(request):
             if 'edit'in key_info[1]:
                 request.session['action'] = key_info[1][:4]
                 request.session['type'] = key_info[1][5:]
-                request.session['vstep_status_change'] == 'False'
+                request.session['vstep_status_change'] = 'False'
                 if data[0]['vstep_status'] == 'Enable':
                     return redirect('vstep')
                 else:
@@ -118,7 +118,7 @@ def settings(request):
             elif 'delete' in key_info[1]:
                 request.session['action'] = key_info[1][:6]
                 request.session['type'] = key_info[1][7:]
-                request.session['vstep_status_change'] == 'False'
+                request.session['vstep_status_change'] = 'False'
                 if data[0]['vstep_status'] == 'Enable':
                     return redirect('vstep')
                 else:
