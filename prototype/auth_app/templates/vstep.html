@@ -14,7 +14,7 @@
         {% csrf_token %}
         <label for="email">Email:</label>
         <input type="email" id="email" name="email" required>
-        <input type="submit" name="vcode" value="Get Verification Code">
+        <button type="submit" name="vcode" class="btn btn-primary">Get Verification Code</button>
         </form>
     {%else%}
         <h2>Verification Code</h2>

@@ -12,6 +12,11 @@ import bcrypt
 from django.http import JsonResponse
 
 def facial_auth(request):
+    # session_keys = list(request.session.keys())
+    # # Delete each session key
+    # if session_keys:
+    #     for key in session_keys:
+    #         del request.session[key]
     if request.method == 'POST':
         # Retrieve the facial data from the request
         facial_data = request.POST.get('facial_data', None)
@@ -56,6 +61,7 @@ def signup(request):
     return render(request, 'signup.html')
 
 def login(request):
+    print(request.session.keys())
     if request.method == 'POST':
         client = pymongo.MongoClient('mongodb+srv://admin:admin@security.ju0aixd.mongodb.net/?retryWrites=true&w=majority')
         db = client.admin
@@ -151,7 +157,7 @@ def vstep_init(request):
         context = {'confirm': ''}
         print(request.session.keys())
         if ('vcode' in request.POST.keys()):
-            if 'vcode' not in request.session:
+            if 'vcode' not in request.session.keys():
                 request.session['vcode'] = 'unused'
             if (request.session['vcode']!='used'):
                 print('get_vcode')
@@ -196,7 +202,11 @@ def vstep(request):
     context = {'confirm': ''}
     if request.method == 'POST':
         vemail = request.POST.get('email')
-        if ('vcode' in request.POST.keys()):
+        print(request.POST.keys())
+        print(request.session.keys())
+        if 'vcode' in request.POST.keys():
+            if 'vcode' not in request.session.keys():
+                request.session['vcode'] = 'unused'
             if (request.session['vcode']!='used'):
                 if vemail != data[0]['vstep_info']:
                     return render(request, 'vstep.html', {'error': 'Input email is not the same as your secondary email.'})
